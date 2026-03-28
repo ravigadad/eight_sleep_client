@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from .settings import Settings, settings_property
@@ -29,6 +30,14 @@ class Alarm:
     @property
     def enabled(self) -> bool:
         return self._data["enabled"]
+
+    @property
+    def next_timestamp(self) -> datetime:
+        return datetime.fromisoformat(self._data["nextTimestamp"])
+
+    @property
+    def skip_next(self) -> bool:
+        return self._data["skipNext"]
 
     audio: AlarmAudioSettings = settings_property("AlarmAudioSettings")  # type: ignore[assignment]
     repeat: AlarmRepeatSettings = settings_property("AlarmRepeatSettings")  # type: ignore[assignment]

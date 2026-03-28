@@ -1,5 +1,7 @@
 """Tests for the Alarm model and settings classes."""
 
+from datetime import datetime, timezone
+
 import pytest
 from mockito import patch
 
@@ -18,11 +20,19 @@ from eight_sleep_client.models.alarm import (
 
 
 def test_alarm_from_dict_exposes_fields():
-    alarm = Alarm.from_dict({"id": "alarm-123", "time": "07:30:00", "enabled": True})
+    alarm = Alarm.from_dict({
+        "id": "alarm-123",
+        "time": "07:30:00",
+        "enabled": True,
+        "nextTimestamp": "2026-03-30T14:30:00Z",
+        "skipNext": False,
+    })
 
     assert alarm.id == "alarm-123"
     assert alarm.time == "07:30:00"
     assert alarm.enabled is True
+    assert alarm.next_timestamp == datetime(2026, 3, 30, 14, 30, tzinfo=timezone.utc)
+    assert alarm.skip_next is False
 
 
 @pytest.mark.parametrize("property_name,class_name", [

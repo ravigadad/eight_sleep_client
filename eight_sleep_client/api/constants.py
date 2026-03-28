@@ -1,7 +1,7 @@
 """Default API URLs and client credentials for the Eight Sleep API.
 
 These are the defaults used when no overrides are provided to the client.
-Consumers can override any of these by passing values to the EightSleepClient
+Consumers can override any of these by passing values to the Client
 constructor.
 """
 

@@ -8,6 +8,8 @@ from eight_sleep_client.session import Session
 from eight_sleep_client.client import Client
 from eight_sleep_client.api.constants import DEFAULT_CLIENT_API_URL
 from eight_sleep_client.models.user_info import UserInfo
+import eight_sleep_client.session as session_module
+from eight_sleep_client.repositories.alarm_repository import AlarmRepository
 
 USERS_ME_URL = f"{DEFAULT_CLIENT_API_URL}/users/me"
 
@@ -59,3 +61,13 @@ async def test_get_interpolates_user_id_and_delegates_to_client():
     result = await session.get("app", "/v2/users/{user_id}/alarms")
 
     assert result == "get_response"
+
+
+# --- alarms ---
+
+
+def test_alarms_passes_session_to_repository():
+    session = Session(client=mock(Client), user_info=mock({"user_id": "u"}, spec=UserInfo))
+    patch(session_module, "AlarmRepository", lambda s: f"repo_for_{id(s)}")
+
+    assert session.alarms == f"repo_for_{id(session)}"

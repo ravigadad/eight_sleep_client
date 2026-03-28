@@ -8,6 +8,7 @@ import httpx
 
 from .api.constants import DEFAULT_CLIENT_API_URL
 from .models.user_info import UserInfo
+from .repositories.alarm_repository import AlarmRepository
 
 if TYPE_CHECKING:
     from .client import Client
@@ -44,6 +45,10 @@ class Session:
     @property
     def device_ids(self) -> list[str]:
         return self._user_info.device_ids
+
+    @property
+    def alarms(self) -> AlarmRepository:
+        return AlarmRepository(self)
 
     async def get(self, api: str, path: str) -> dict:
         """Interpolate user context into path and delegate to Client."""

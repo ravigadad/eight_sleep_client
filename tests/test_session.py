@@ -44,9 +44,9 @@ def test_session_exposes_device_ids():
 
 
 def _users_me_response(**overrides) -> dict:
-    defaults = {
+    user = {
         "userId": "user-123",
         "devices": ["device-abc"],
     }
-    defaults.update(overrides)
-    return defaults
+    user.update(overrides)
+    return {"user": user}

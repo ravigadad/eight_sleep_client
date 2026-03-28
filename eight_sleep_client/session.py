@@ -33,7 +33,7 @@ class Session:
         await client.authenticate()
 
         response = await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/users/me")
-        user_info = UserInfo.from_api_response(response)
+        user_info = UserInfo.from_api_response(response["user"])
 
         return cls(client=client, user_info=user_info)
 

@@ -34,7 +34,67 @@ Use `Authorization: Bearer <access_token>` on all subsequent requests. Tokens ex
 GET https://client-api.8slp.net/v1/users/me
 ```
 
-Returns user profile, device IDs, settings.
+Response:
+```json
+{
+  "user": {
+    "userId": "string",
+    "email": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "gender": "male|female",
+    "tempPreference": "warm|cool",
+    "tempPreferenceUpdatedAt": "ISO8601",
+    "dob": "ISO8601",
+    "zip": 11111,
+    "emailVerified": true,
+    "sharingMetricsTo": ["userId", ...],
+    "sharingMetricsFrom": ["userId", ...],
+    "notifications": {
+      "weeklyReportEmail": true,
+      "sessionProcessed": true,
+      "temperatureRecommendation": false,
+      "healthInsight": false,
+      "sleepInsight": false,
+      "marketingUpdates": false,
+      "bedtimeReminder": false,
+      "alarmWakeupPush": false
+    },
+    "displaySettings": {
+      "useRealTemperatures": false,
+      "locale": "en-US",
+      "clockSystem": "12-hour|24-hour",
+      "measurementSystem": "imperial|metric"
+    },
+    "createdAt": "ISO8601",
+    "experimentalFeatures": true,
+    "autopilotEnabled": false,
+    "lastReset": "ISO8601",
+    "nextReset": "ISO8601",
+    "sleepTracking": {
+      "enabledSince": "ISO8601"
+    },
+    "chronotype": "late|early|...",
+    "isChronotypeCalibrating": false,
+    "chronotypeDate": "ISO8601",
+    "autoPodTemperatureOff": false,
+    "features": ["warming", "cooling", "vibration", "tapControls", "elevation", "alarms"],
+    "currentDevice": {
+      "id": "string",
+      "side": "solo|left|right",
+      "timeZone": "America/Los_Angeles",
+      "specialization": "pod"
+    },
+    "hotelGuest": false,
+    "devices": ["deviceId", ...]
+  }
+}
+```
+
+Notable fields:
+- `currentDevice.side` — which side of the bed this user occupies (`solo` for single-user pods)
+- `features` — capabilities of the user's pod
+- `devices` — flat list of device IDs (same as `currentDevice.id` for single-device accounts)
 
 ---
 

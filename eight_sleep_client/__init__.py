@@ -1,4 +1,5 @@
-"""Async Python client for the Eight Sleep Pod API.
+"""Async Python client for the Eight Sleep Pod API."""
 
-Public exports are added as classes are implemented.
-"""
+from .session import Session
+
+__all__ = ["Session"]

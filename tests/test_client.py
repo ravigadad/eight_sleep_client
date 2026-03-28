@@ -105,16 +105,15 @@ async def test_request_server_error():
 async def test_get_prepends_base_url_and_delegates():
     mock_http = mock(httpx.AsyncClient)
     _stub_authenticator()
-    sentinel = object()
     when(mock_http).request(
         "GET", f"{DEFAULT_APP_API_URL}/v2/users/user-123/alarms", headers=any_arg()
-    ).thenReturn(mock_response(200, sentinel))
+    ).thenReturn(mock_response(200, "get_response"))
 
     client = Client(mock_http, email="user@example.com", password="pass123")
     await client.authenticate()
     result = await client.get("app", "/v2/users/user-123/alarms")
 
-    assert result is sentinel
+    assert result == "get_response"
 
 
 # --- helpers ---

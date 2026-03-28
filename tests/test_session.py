@@ -17,12 +17,11 @@ USERS_ME_URL = f"{DEFAULT_CLIENT_API_URL}/users/me"
 
 async def test_create_delegates_to_client_and_user_info():
     mock_client = mock(Client)
-    mock_user_info = mock(UserInfo)
     user_data = {"userId": "user-123", "devices": ["device-abc"]}
 
     when(mock_client).authenticate().thenReturn(None)
     when(mock_client).request("GET", USERS_ME_URL).thenReturn({"user": user_data})
-    when(UserInfo).from_api_response(user_data).thenReturn(mock_user_info)
+    when(UserInfo).from_dict(user_data).thenReturn("user_info")
     patch(client_module, "Client", lambda *args, **kwargs: mock_client)
 
     async with httpx.AsyncClient() as http:
@@ -30,7 +29,7 @@ async def test_create_delegates_to_client_and_user_info():
 
     assert isinstance(session, Session)
     verify(mock_client).request("GET", USERS_ME_URL)
-    verify(UserInfo).from_api_response(user_data)
+    verify(UserInfo).from_dict(user_data)
 
 
 # --- properties ---
@@ -54,10 +53,9 @@ def test_session_exposes_device_ids():
 async def test_get_interpolates_user_id_and_delegates_to_client():
     mock_client = mock(Client)
     user_info = mock({"user_id": "user-123"}, spec=UserInfo)
-    sentinel = object()
-    when(mock_client).get("app", "/v2/users/user-123/alarms").thenReturn(sentinel)
+    when(mock_client).get("app", "/v2/users/user-123/alarms").thenReturn("get_response")
 
     session = Session(client=mock_client, user_info=user_info)
     result = await session.get("app", "/v2/users/{user_id}/alarms")
 
-    assert result is sentinel
+    assert result == "get_response"

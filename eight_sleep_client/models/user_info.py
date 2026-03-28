@@ -21,8 +21,8 @@ class UserInfo:
     raw: dict[str, Any]
 
     @classmethod
-    def from_api_response(cls, data: dict[str, Any]) -> UserInfo:
-        """Create a UserInfo from a /users/me API response's 'user' object."""
+    def from_dict(cls, data: dict[str, Any]) -> UserInfo:
+        """Create a UserInfo from a dict."""
         return cls(
             user_id=data["userId"],
             device_ids=data.get("devices", []),

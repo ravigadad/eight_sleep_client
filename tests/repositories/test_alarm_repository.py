@@ -12,17 +12,14 @@ from eight_sleep_client.session import Session
 
 async def test_all_constructs_alarms_from_response():
     session = mock(Session)
-    alarm_1 = mock(Alarm)
-    alarm_2 = mock(Alarm)
-
     when(session).get("app", "/v2/users/{user_id}/alarms").thenReturn({
         "alarms": [{"id": "a1"}, {"id": "a2"}],
     })
-    when(Alarm).from_dict({"id": "a1"}).thenReturn(alarm_1)
-    when(Alarm).from_dict({"id": "a2"}).thenReturn(alarm_2)
+    when(Alarm).from_dict({"id": "a1"}).thenReturn("alarm_1")
+    when(Alarm).from_dict({"id": "a2"}).thenReturn("alarm_2")
 
     repository = AlarmRepository(session)
-    assert await repository.all() == [alarm_1, alarm_2]
+    assert await repository.all() == ["alarm_1", "alarm_2"]
 
 
 async def test_all_returns_empty_list_when_no_alarms():

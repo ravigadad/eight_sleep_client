@@ -38,7 +38,7 @@ async def test_authenticate_delegates_to_token_factory():
     token = await auth.authenticate()
 
     assert token is mock_token
-    verify(Token).from_api_response(_auth_response())
+    verify(Token).from_dict(_auth_response())
 
 
 async def test_authenticate_invalid_credentials():
@@ -108,7 +108,7 @@ async def test_ensure_valid_token_refreshes_when_expired():
     mock_http = mock(httpx.AsyncClient)
     expired_token = mock({"is_expired": True}, spec=Token)
     fresh_token = mock({"is_expired": False}, spec=Token)
-    when(Token).from_api_response(...).thenReturn(expired_token).thenReturn(fresh_token)
+    when(Token).from_dict(...).thenReturn(expired_token).thenReturn(fresh_token)
     when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
         mock_response(200, _auth_response())
     )
@@ -134,7 +134,7 @@ async def test_token_is_none_before_authenticate():
 
 def _stub_token(is_expired: bool = False) -> Token:
     mock_token = mock({"is_expired": is_expired}, spec=Token)
-    when(Token).from_api_response(...).thenReturn(mock_token)
+    when(Token).from_dict(...).thenReturn(mock_token)
     return mock_token
 
 

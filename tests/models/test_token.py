@@ -13,14 +13,14 @@ from eight_sleep_client.api.constants import TOKEN_EXPIRY_BUFFER_SECONDS
 
 
 @time_machine.travel(1000000.0, tick=False)
-def test_from_api_response_maps_fields():
+def test_from_dict_maps_fields():
     data = {
         "access_token": "tok123",
         "refresh_token": "ref456",
         "expires_in": 72000,
         "userId": "user789",
     }
-    token = Token.from_api_response(data)
+    token = Token.from_dict(data)
 
     assert token.access_token == "tok123"
     assert token.refresh_token == "ref456"

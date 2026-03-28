@@ -51,7 +51,7 @@ class Authenticator:
                 f"Authentication failed with status {response.status_code}"
             )
 
-        self._token = Token.from_api_response(response.json())
+        self._token = Token.from_dict(response.json())
         return self._token
 
     async def ensure_valid_token(self) -> Token:

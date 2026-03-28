@@ -10,17 +10,17 @@ from eight_sleep_client.models.user_info import UserInfo
 # --- class methods ---
 
 
-def test_from_api_response_maps_fields():
+def test_from_dict_maps_fields():
     raw = {"userId": "abc123", "devices": ["dev1", "dev2"], "email": "test@example.com"}
-    info = UserInfo.from_api_response(raw)
+    info = UserInfo.from_dict(raw)
 
     assert info.user_id == "abc123"
     assert info.device_ids == ["dev1", "dev2"]
     assert info.raw is raw
 
 
-def test_from_api_response_defaults_missing_devices_to_empty():
-    info = UserInfo.from_api_response({"userId": "abc123"})
+def test_from_dict_defaults_missing_devices_to_empty():
+    info = UserInfo.from_dict({"userId": "abc123"})
     assert info.device_ids == []
 
 

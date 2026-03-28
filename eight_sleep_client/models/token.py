@@ -26,8 +26,8 @@ class Token:
     user_id: str
 
     @classmethod
-    def from_api_response(cls, data: dict[str, Any]) -> Token:
-        """Create a Token from an authentication API response."""
+    def from_dict(cls, data: dict[str, Any]) -> Token:
+        """Create a Token from a dict."""
         return cls(
             access_token=data["access_token"],
             refresh_token=data["refresh_token"],

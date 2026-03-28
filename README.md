@@ -26,11 +26,10 @@ Other Pod models may work but haven't been tested.
 
 ```python
 import httpx
-from eight_sleep_client import EightSleepClient
+from eight_sleep_client import Session
 
 async with httpx.AsyncClient() as http:
-    client = EightSleepClient(http, email="you@example.com", password="secret")
-    session = await client.authenticate()
+    session = await Session.create(http, email="you@example.com", password="secret")
     print(session.user_id)
     print(session.device_ids)
 ```

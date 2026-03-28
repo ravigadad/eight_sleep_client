@@ -25,14 +25,28 @@ def test_alarm_from_dict_exposes_fields():
         "time": "07:30:00",
         "enabled": True,
         "nextTimestamp": "2026-03-30T14:30:00Z",
+        "startTimestamp": "2026-03-30T14:30:00Z",
+        "endTimestamp": "2026-03-30T14:50:00Z",
         "skipNext": False,
+        "snoozing": True,
+        "snoozedUntil": "2026-03-30T14:39:00Z",
+        "skippedUntil": "1970-01-01T00:00:00Z",
+        "dismissedUntil": "2026-03-27T21:39:30Z",
+        "tags": ["routine-abc"],
     })
 
     assert alarm.id == "alarm-123"
     assert alarm.time == "07:30:00"
     assert alarm.enabled is True
     assert alarm.next_timestamp == datetime(2026, 3, 30, 14, 30, tzinfo=timezone.utc)
+    assert alarm.start_timestamp == datetime(2026, 3, 30, 14, 30, tzinfo=timezone.utc)
+    assert alarm.end_timestamp == datetime(2026, 3, 30, 14, 50, tzinfo=timezone.utc)
     assert alarm.skip_next is False
+    assert alarm.snoozing is True
+    assert alarm.snoozed_until == datetime(2026, 3, 30, 14, 39, tzinfo=timezone.utc)
+    assert alarm.skipped_until == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert alarm.dismissed_until == datetime(2026, 3, 27, 21, 39, 30, tzinfo=timezone.utc)
+    assert alarm.tags == ["routine-abc"]
 
 
 @pytest.mark.parametrize("property_name,class_name", [

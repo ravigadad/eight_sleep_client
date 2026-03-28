@@ -14,6 +14,9 @@ class Alarm:
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
 
+    def _datetime(self, key: str) -> datetime:
+        return datetime.fromisoformat(self._data[key])
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Alarm:
         """Create an Alarm from a dict."""
@@ -33,11 +36,39 @@ class Alarm:
 
     @property
     def next_timestamp(self) -> datetime:
-        return datetime.fromisoformat(self._data["nextTimestamp"])
+        return self._datetime("nextTimestamp")
+
+    @property
+    def start_timestamp(self) -> datetime:
+        return self._datetime("startTimestamp")
+
+    @property
+    def end_timestamp(self) -> datetime:
+        return self._datetime("endTimestamp")
 
     @property
     def skip_next(self) -> bool:
         return self._data["skipNext"]
+
+    @property
+    def snoozing(self) -> bool:
+        return self._data["snoozing"]
+
+    @property
+    def snoozed_until(self) -> datetime:
+        return self._datetime("snoozedUntil")
+
+    @property
+    def skipped_until(self) -> datetime:
+        return self._datetime("skippedUntil")
+
+    @property
+    def dismissed_until(self) -> datetime:
+        return self._datetime("dismissedUntil")
+
+    @property
+    def tags(self) -> list[str]:
+        return self._data["tags"]
 
     audio: AlarmAudioSettings = settings_property("AlarmAudioSettings")  # type: ignore[assignment]
     repeat: AlarmRepeatSettings = settings_property("AlarmRepeatSettings")  # type: ignore[assignment]

@@ -95,6 +95,126 @@ Notable fields:
 - `currentDevice.side` — which side of the bed this user occupies (`solo` for single-user pods)
 - `features` — capabilities of the user's pod
 - `devices` — flat list of device IDs (same as `currentDevice.id` for single-device accounts)
+- `sharingMetricsTo` / `sharingMetricsFrom` — linked user IDs (e.g. partner on another pod)
+
+---
+
+## Device Info
+
+```
+GET https://client-api.8slp.net/v1/devices/{deviceId}
+```
+
+Response:
+```json
+{
+  "result": {
+    "deviceId": "string",
+    "ownerId": "userId",
+    "leftUserId": "userId",
+    "rightUserId": "userId",
+    "leftHeatingLevel": -42,
+    "leftTargetHeatingLevel": 0,
+    "leftNowHeating": false,
+    "leftHeatingDuration": 0,
+    "leftSchedule": {
+      "daysUTC": { "sunday": false, "monday": false, ... },
+      "enabled": false
+    },
+    "rightHeatingLevel": -42,
+    "rightTargetHeatingLevel": 0,
+    "rightNowHeating": false,
+    "rightHeatingDuration": 0,
+    "rightSchedule": {
+      "daysUTC": { "sunday": false, "monday": false, ... },
+      "enabled": false
+    },
+    "priming": false,
+    "lastLowWater": "ISO8601",
+    "needsPriming": false,
+    "hasWater": true,
+    "ledBrightnessLevel": 0,
+    "sensorInfo": {
+      "label": "string",
+      "partNumber": "string",
+      "sku": "string",
+      "hwRevision": "string",
+      "serialNumber": "string",
+      "lastConnected": "ISO8601",
+      "skuName": "queen|king|...",
+      "model": "Pod4|...",
+      "version": 4,
+      "supportsMaintenanceInserts": true,
+      "connected": true
+    },
+    "sensors": [ { "...same fields as sensorInfo..." } ],
+    "expectedPeripherals": null,
+    "hubInfo": "string",
+    "timezone": "America/Los_Angeles",
+    "mattressInfo": {
+      "firstUsedDate": null,
+      "eightMattress": null,
+      "brand": null
+    },
+    "firmwareCommit": "string",
+    "firmwareVersion": "string",
+    "firmwareUpdated": true,
+    "firmwareUpdating": false,
+    "lastFirmwareUpdateStart": "ISO8601",
+    "lastHeard": "ISO8601",
+    "online": true,
+    "leftKelvin": {
+      "targetLevels": [21, 18, 8],
+      "alarms": [],
+      "scheduleProfiles": [
+        {
+          "enabled": true,
+          "startLocalTime": "22:30:00",
+          "weekDays": { "monday": true, ... }
+        }
+      ],
+      "phases": [],
+      "level": 0,
+      "currentTargetLevel": 0,
+      "active": false,
+      "currentActivity": "off"
+    },
+    "rightKelvin": { "...same structure as leftKelvin..." },
+    "features": ["warming", "cooling", "vibration", "tapControls", "elevation", "alarms"],
+    "leftUserInvitationPending": false,
+    "rightUserInvitationPending": false,
+    "modelString": "Pod 4",
+    "hubSerial": "string",
+    "wifiInfo": {
+      "signalStrength": -53,
+      "ssid": "string",
+      "ipAddr": "192.168.1.x",
+      "macAddr": "AA:BB:CC:DD:EE:FF",
+      "asOf": "ISO8601"
+    },
+    "awaySides": {
+      "leftUserId": "userId",
+      "rightUserId": "userId"
+    },
+    "lastPrime": "ISO8601",
+    "isTemperatureAvailable": true,
+    "deactivated": {}
+  }
+}
+```
+
+Notable fields:
+- `leftUserId` / `rightUserId` — per-side user assignment. Both are the same user for `solo` pods. Different users for shared beds.
+- `sensorInfo.model` — hardware model (e.g. `Pod4`)
+- `sensorInfo.skuName` — bed size (e.g. `queen`)
+- `online`, `lastHeard`, `connected` — connectivity status
+- `wifiInfo` — signal strength, IP, SSID, MAC
+- `leftKelvin` / `rightKelvin` — per-side temperature state, schedules, and current activity
+- `ledBrightnessLevel` — current LED brightness (0–100)
+- `priming`, `needsPriming`, `hasWater`, `lastPrime` — water/maintenance status
+- `firmwareVersion`, `firmwareUpdating` — firmware state
+- `features` — device capabilities (same list as on user endpoint)
+- Side assignment is on the device, not the user. The user endpoint's `currentDevice.side` reflects which side they're assigned to on this device.
 
 ---
 
@@ -356,6 +476,77 @@ Response includes additional read-only fields:
   }
 }
 ```
+
+---
+
+## Temperature State
+
+```
+GET https://client-api.8slp.net/v1/users/{userId}/temperature
+```
+
+Response:
+```json
+{
+  "currentLevel": 0,
+  "settings": {
+    "scheduleType": "smart",
+    "timeBased": {
+      "level": 0,
+      "durationSeconds": 0
+    },
+    "smart": {
+      "bedTimeLevel": 21,
+      "initialSleepLevel": 18,
+      "finalSleepLevel": 8
+    },
+    "schedules": [
+      {
+        "id": "uuid",
+        "enabled": true,
+        "time": "22:30:00",
+        "days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "tags": [],
+        "startSettings": {
+          "bedtime": 25
+        }
+      }
+    ],
+    "smartProfiles": []
+  },
+  "nextScheduledTimestamp": "ISO8601",
+  "currentState": {
+    "type": "off|on|...",
+    "instance": {
+      "timestamp": "ISO8601"
+    }
+  },
+  "currentSchedule": {
+    "id": "uuid",
+    "enabled": true,
+    "time": "22:30:00",
+    "days": ["monday", ...],
+    "tags": [],
+    "startSettings": {
+      "bedtime": 25
+    }
+  },
+  "nextSchedule": { "...same structure as currentSchedule..." },
+  "nextBedtimeDisplayWindow": {
+    "displayWindowHours": 16,
+    "nextTimestampInWindow": true
+  }
+}
+```
+
+Notable fields:
+- `currentLevel` — current temperature level (raw value, -100 to +100 range)
+- `currentState.type` — whether the pod is currently active (`off`, `on`, etc.)
+- `settings.scheduleType` — `smart` or `timeBased`
+- `settings.smart` — three-phase temperature schedule: bedtime → initial sleep → final sleep
+- `schedules` — configured bedtime schedules with per-day enablement
+- `nextScheduledTimestamp` — when the pod will next activate
+- `nextBedtimeDisplayWindow` — used by the app to decide when to show bedtime UI
 
 ---
 
@@ -1404,7 +1595,6 @@ On cold start, the app fires ~70 requests in ~2 seconds. Key categories:
 Seen in app traffic but not yet documented in detail:
 
 - `GET /v1/users/{userId}/temperature/all` — full temperature config (3 phases: bedTime, initialSleep, finalSleep)
-- `GET /v1/users/{userId}/temperature` (client-api) — temperature state
 - `GET /v1/users/{userId}/level-suggestions` — temperature level suggestions
 - `GET/PUT /v1/users/{userId}/level-suggestions-mode` — suggestion mode config
 - `GET /v1/audio/categories` — audio category list (Pod 5 Ultra only — requires built-in Base speakers)

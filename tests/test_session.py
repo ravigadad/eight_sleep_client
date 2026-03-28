@@ -46,3 +46,18 @@ def test_session_exposes_device_ids():
     user_info = mock({"device_ids": ["dev1", "dev2"]}, spec=UserInfo)
     session = Session(client=mock(Client), user_info=user_info)
     assert session.device_ids == ["dev1", "dev2"]
+
+
+# --- get ---
+
+
+async def test_get_interpolates_user_id_and_delegates_to_client():
+    mock_client = mock(Client)
+    user_info = mock({"user_id": "user-123"}, spec=UserInfo)
+    sentinel = object()
+    when(mock_client).get("app", "/v2/users/user-123/alarms").thenReturn(sentinel)
+
+    session = Session(client=mock_client, user_info=user_info)
+    result = await session.get("app", "/v2/users/{user_id}/alarms")
+
+    assert result is sentinel

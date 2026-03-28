@@ -8,7 +8,7 @@ from tests.helpers import mock_response
 import eight_sleep_client.client as client_module
 from eight_sleep_client.client import Client
 from eight_sleep_client.api.authenticator import Authenticator
-from eight_sleep_client.api.constants import DEFAULT_CLIENT_API_URL
+from eight_sleep_client.api.constants import DEFAULT_APP_API_URL, DEFAULT_CLIENT_API_URL
 from eight_sleep_client.api.exceptions import AuthenticationError, RequestError
 from eight_sleep_client.models.token import Token
 
@@ -97,6 +97,24 @@ async def test_request_server_error():
     await client.authenticate()
     with pytest.raises(RequestError):
         await client.request("GET", ENDPOINT)
+
+
+# --- get ---
+
+
+async def test_get_prepends_base_url_and_delegates():
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+    sentinel = object()
+    when(mock_http).request(
+        "GET", f"{DEFAULT_APP_API_URL}/v2/users/user-123/alarms", headers=any_arg()
+    ).thenReturn(mock_response(200, sentinel))
+
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    result = await client.get("app", "/v2/users/user-123/alarms")
+
+    assert result is sentinel
 
 
 # --- helpers ---

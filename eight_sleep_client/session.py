@@ -44,3 +44,8 @@ class Session:
     @property
     def device_ids(self) -> list[str]:
         return self._user_info.device_ids
+
+    async def get(self, api: str, path: str) -> dict:
+        """Interpolate user context into path and delegate to Client."""
+        resolved = path.format_map({"user_id": self.user_id})
+        return await self._client.get(api, resolved)

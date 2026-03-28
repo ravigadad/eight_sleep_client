@@ -5,7 +5,13 @@ from __future__ import annotations
 import httpx
 
 from .api.authenticator import Authenticator
+from .api.constants import DEFAULT_APP_API_URL, DEFAULT_CLIENT_API_URL
 from .api.exceptions import AuthenticationError, RequestError
+
+BASE_URLS = {
+    "app": DEFAULT_APP_API_URL,
+    "client": DEFAULT_CLIENT_API_URL,
+}
 
 
 class Client:
@@ -46,3 +52,8 @@ class Client:
             raise RequestError(f"Server error: {response.status_code}")
 
         return response.json()
+
+    async def get(self, api: str, path: str) -> dict:
+        """Make an authenticated GET request to the given API and path."""
+        url = f"{BASE_URLS[api]}{path}"
+        return await self.request("GET", url)

@@ -31,9 +31,12 @@ Short class names — `Session`, `Client`, `Token` (package provides namespace).
   - `models/` — data objects (one class per file)
     - `token.py` — Token
     - `user_info.py` — UserInfo
+  - `repositories/` — domain repositories (one per domain)
 - `tests/` — test suite (mirrors source structure)
+  - `helpers.py` — shared test helpers (e.g. `mock_response`)
   - `api/` — tests for api/ classes
   - `models/` — tests for model classes
+  - `repositories/` — tests for repositories
 - `docs/api_reference.md` — full API reference
 - `docs/plan.md` — architecture and roadmap
 
@@ -55,13 +58,16 @@ Short class names — `Session`, `Client`, `Token` (package provides namespace).
 
 ## Testing
 
-- pytest + respx (declarative HTTP mocking for httpx)
+- pytest + mockito (declarative mocking with strict verification)
 - TDD — write tests first, then implementation
-- Unit + integration tests only — no "integrated" tests that cross object boundaries
+- Unit tests only — no "integrated" tests that cross object boundaries
+- Stub collaborators at boundaries; never let a test execute code in a collaborator
+- Use `mock(ClassName)` for strict mocks; `mock({"attr": val}, spec=Class)` for attribute stubs
+- Use `when(obj).method(args).thenReturn(val)` for stubbing; `verify(obj).method(args)` for assertions
+- `when` sets up behavior (use matchers like `any()` or `...`); `verify` asserts the interaction
+- Pure value objects (frozen dataclasses) don't need mocking — test them directly
+- Shared test helpers in `tests/helpers.py`; factory helpers at bottom of test files
 - Test file structure mirrors source structure
-- Always use `Mock(spec=Class)` — never unconstrained mocks
-- Stub collaborators at boundaries; don't construct real instances
-- Factory helpers (`_make_token()`, etc.) at bottom of test files
 
 ## Rules
 

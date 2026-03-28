@@ -16,11 +16,12 @@ Other Pod models may work but haven't been tested.
 
 ## Design
 
+- **Layered architecture** — Model → Repository → Session → Client
 - **Pure async Python** — built on httpx, no framework dependencies
 - **Dependency injection** — caller provides the `httpx.AsyncClient`
-- **Session pattern** — `authenticate()` returns a session carrying user and device context
-- **Frozen dataclasses** — immutable models with factory methods for parsing API responses
-- **TDD** — pytest + respx, tests mirror source structure
+- **Session as entry point** — `Session.create()` is the public API
+- **Rich domain models** — mutable objects with behavior, delegating to repositories
+- **TDD** — pytest + mockito, strict mocking at boundaries
 
 ## Usage
 
@@ -36,7 +37,7 @@ async with httpx.AsyncClient() as http:
 
 ## Roadmap
 
-1. **Auth + User Discovery** (in progress) — authenticate, fetch user/device info
+1. **Auth + User Discovery** (complete) — authenticate, fetch user/device info
 2. **Alarms** — full CRUD for the alarms API
 3. **Temperature Control** — on/off, smart schedules, autopilot
 4. **Away Mode** — start/end away with return date

@@ -41,10 +41,11 @@
 - **No Home Assistant imports** anywhere in the library
 - **Frozen dataclasses** for infrastructure models (Token, UserInfo) — domain models (future) will be mutable with behavior
 - **TDD** — write tests first, then implementation
+- **mockito** for declarative mocking — strict by default, `when`/`verify` style
 - **Constants are defaults, overridable via constructor**
 
 ## Verification
 
-1. `pytest` — 25 tests passing
+1. `pytest` — 24 tests passing
 2. Smoke test with real credentials — confirmed working
 3. `grep -r "homeassistant" eight_sleep_client/` — no HA imports

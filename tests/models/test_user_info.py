@@ -2,6 +2,8 @@
 
 import dataclasses
 
+import pytest
+
 from eight_sleep_client.models.user_info import UserInfo
 
 
@@ -27,11 +29,8 @@ def test_from_api_response_defaults_missing_devices_to_empty():
 
 def test_user_info_is_frozen():
     info = _make_user_info()
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError):
         info.user_id = "changed"  # type: ignore[misc]
-        assert False, "Should have raised FrozenInstanceError"
-    except dataclasses.FrozenInstanceError:
-        pass
 
 
 # --- helpers ---

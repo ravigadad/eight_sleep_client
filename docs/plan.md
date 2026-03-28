@@ -29,7 +29,7 @@ Each layer only knows the one below it. Callers interact with Sessions, Reposito
 - **One class per file**, file named after the class
 - **Semantic folder structure** — `api/` for HTTP infrastructure, `models/` for domain objects
 - **Short class names** — `Session`, `Client`, `Token` (package provides namespace)
-- **TDD** — pytest + respx, tests mirror source structure
+- **TDD** — pytest + mockito, strict mocking at boundaries, tests mirror source structure
 - **Constants are defaults, overridable via constructor**
 
 ## Iteration 1: Auth + User Discovery (complete)

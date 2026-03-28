@@ -1,98 +1,113 @@
 """Tests for Client."""
 
-from unittest.mock import AsyncMock, Mock, patch
-
 import httpx
 import pytest
-import respx
+from mockito import mock, when, verify, patch, any as any_arg
 
+from tests.helpers import mock_response
+import eight_sleep_client.client as client_module
 from eight_sleep_client.client import Client
 from eight_sleep_client.api.authenticator import Authenticator
 from eight_sleep_client.api.constants import DEFAULT_CLIENT_API_URL
 from eight_sleep_client.api.exceptions import AuthenticationError, RequestError
 from eight_sleep_client.models.token import Token
 
+ENDPOINT = f"{DEFAULT_CLIENT_API_URL}/some/endpoint"
+
+
+# --- authenticate ---
+
+
+async def test_authenticate_delegates_to_authenticator():
+    mock_http = mock(httpx.AsyncClient)
+    mock_authenticator = _stub_authenticator()
+
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+
+    verify(mock_authenticator).authenticate()
+
 
 # --- request ---
 
 
 async def test_request_not_authenticated():
-    async with httpx.AsyncClient() as http:
-        with patch("eight_sleep_client.client.Authenticator", return_value=_make_mock_authenticator()):
-            client = Client(http, email="user@example.com", password="pass123")
-            with pytest.raises(AuthenticationError):
-                await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/some/endpoint")
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    with pytest.raises(AuthenticationError):
+        await client.request("GET", ENDPOINT)
 
 
-@respx.mock
 async def test_request_sends_bearer_header():
-    route = respx.get(f"{DEFAULT_CLIENT_API_URL}/some/endpoint").mock(
-        return_value=httpx.Response(200, json={"ok": True})
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+    when(mock_http).request("GET", ENDPOINT, headers=any_arg()).thenReturn(
+        mock_response(200, {"ok": True})
     )
 
-    async with httpx.AsyncClient() as http:
-        with patch("eight_sleep_client.client.Authenticator", return_value=_make_mock_authenticator()):
-            client = Client(http, email="user@example.com", password="pass123")
-            await client.authenticate()
-            await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/some/endpoint")
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    await client.request("GET", ENDPOINT)
 
-    auth_header = route.calls.last.request.headers["authorization"]
-    assert auth_header == "Bearer test-access-token"
+    verify(mock_http).request("GET", ENDPOINT, headers={"Authorization": "Bearer test-access-token"})
 
 
-@respx.mock
 async def test_request_401_triggers_refresh_and_retry():
-    route = respx.get(f"{DEFAULT_CLIENT_API_URL}/some/endpoint").mock(
-        side_effect=[
-            httpx.Response(401, json={"error": "unauthorized"}),
-            httpx.Response(200, json={"ok": True}),
-        ]
+    mock_http = mock(httpx.AsyncClient)
+    mock_authenticator = _stub_authenticator()
+    when(mock_http).request("GET", ENDPOINT, headers=any_arg()).thenReturn(
+        mock_response(401, {"error": "unauthorized"})
+    ).thenReturn(
+        mock_response(200, {"ok": True})
     )
 
-    async with httpx.AsyncClient() as http:
-        with patch("eight_sleep_client.client.Authenticator", return_value=_make_mock_authenticator()):
-            client = Client(http, email="user@example.com", password="pass123")
-            await client.authenticate()
-            result = await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/some/endpoint")
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    result = await client.request("GET", ENDPOINT)
 
     assert result == {"ok": True}
-    assert route.call_count == 2
+    verify(mock_authenticator, times=2).authenticate()
 
 
-@respx.mock
 async def test_request_401_retry_still_fails():
-    respx.get(f"{DEFAULT_CLIENT_API_URL}/some/endpoint").mock(
-        return_value=httpx.Response(401, json={"error": "unauthorized"})
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+    when(mock_http).request("GET", ENDPOINT, headers=any_arg()).thenReturn(
+        mock_response(401, {"error": "unauthorized"})
+    ).thenReturn(
+        mock_response(401, {"error": "unauthorized"})
     )
 
-    async with httpx.AsyncClient() as http:
-        with patch("eight_sleep_client.client.Authenticator", return_value=_make_mock_authenticator()):
-            client = Client(http, email="user@example.com", password="pass123")
-            await client.authenticate()
-            with pytest.raises(AuthenticationError):
-                await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/some/endpoint")
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    with pytest.raises(AuthenticationError):
+        await client.request("GET", ENDPOINT)
 
 
-@respx.mock
 async def test_request_server_error():
-    respx.get(f"{DEFAULT_CLIENT_API_URL}/some/endpoint").mock(
-        return_value=httpx.Response(500, json={"error": "internal"})
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+    when(mock_http).request("GET", ENDPOINT, headers=any_arg()).thenReturn(
+        mock_response(500, {"error": "internal"})
     )
 
-    async with httpx.AsyncClient() as http:
-        with patch("eight_sleep_client.client.Authenticator", return_value=_make_mock_authenticator()):
-            client = Client(http, email="user@example.com", password="pass123")
-            await client.authenticate()
-            with pytest.raises(RequestError):
-                await client.request("GET", f"{DEFAULT_CLIENT_API_URL}/some/endpoint")
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    with pytest.raises(RequestError):
+        await client.request("GET", ENDPOINT)
 
 
 # --- helpers ---
 
 
-def _make_mock_authenticator() -> Mock:
-    mock_token = Mock(spec=Token, access_token="test-access-token")
-    mock_authenticator = Mock(spec=Authenticator)
-    mock_authenticator.authenticate = AsyncMock(return_value=mock_token)
-    mock_authenticator.ensure_valid_token = AsyncMock(return_value=mock_token)
+def _stub_authenticator() -> Authenticator:
+    mock_token = mock({"access_token": "test-access-token"}, spec=Token)
+    mock_authenticator = mock(Authenticator)
+    when(mock_authenticator).authenticate().thenReturn(mock_token)
+    when(mock_authenticator).ensure_valid_token().thenReturn(mock_token)
+    patch(client_module, "Authenticator", lambda *args, **kwargs: mock_authenticator)
     return mock_authenticator
+
+

@@ -1,52 +1,48 @@
 """Tests for Session."""
 
-from unittest.mock import AsyncMock, Mock, patch
-
 import httpx
+from mockito import mock, when, verify, patch
 
+import eight_sleep_client.client as client_module
 from eight_sleep_client.session import Session
 from eight_sleep_client.client import Client
+from eight_sleep_client.api.constants import DEFAULT_CLIENT_API_URL
 from eight_sleep_client.models.user_info import UserInfo
+
+USERS_ME_URL = f"{DEFAULT_CLIENT_API_URL}/users/me"
 
 
 # --- create ---
 
 
-async def test_create_returns_session():
-    mock_client = Mock(spec=Client)
-    mock_client.authenticate = AsyncMock()
-    mock_client.request = AsyncMock(return_value=_users_me_response())
+async def test_create_delegates_to_client_and_user_info():
+    mock_client = mock(Client)
+    mock_user_info = mock(UserInfo)
+    user_data = {"userId": "user-123", "devices": ["device-abc"]}
 
-    with patch("eight_sleep_client.client.Client", return_value=mock_client):
-        async with httpx.AsyncClient() as http:
-            session = await Session.create(http, email="user@example.com", password="pass123")
+    when(mock_client).authenticate().thenReturn(None)
+    when(mock_client).request("GET", USERS_ME_URL).thenReturn({"user": user_data})
+    when(UserInfo).from_api_response(user_data).thenReturn(mock_user_info)
+    patch(client_module, "Client", lambda *args, **kwargs: mock_client)
+
+    async with httpx.AsyncClient() as http:
+        session = await Session.create(http, email="user@example.com", password="pass123")
 
     assert isinstance(session, Session)
-    mock_client.authenticate.assert_awaited_once()
+    verify(mock_client).request("GET", USERS_ME_URL)
+    verify(UserInfo).from_api_response(user_data)
 
 
 # --- properties ---
 
 
 def test_session_exposes_user_id():
-    user_info = Mock(spec=UserInfo, user_id="user-abc")
-    session = Session(client=Mock(spec=Client), user_info=user_info)
+    user_info = mock({"user_id": "user-abc"}, spec=UserInfo)
+    session = Session(client=mock(Client), user_info=user_info)
     assert session.user_id == "user-abc"
 
 
 def test_session_exposes_device_ids():
-    user_info = Mock(spec=UserInfo, device_ids=["dev1", "dev2"])
-    session = Session(client=Mock(spec=Client), user_info=user_info)
+    user_info = mock({"device_ids": ["dev1", "dev2"]}, spec=UserInfo)
+    session = Session(client=mock(Client), user_info=user_info)
     assert session.device_ids == ["dev1", "dev2"]
-
-
-# --- helpers ---
-
-
-def _users_me_response(**overrides) -> dict:
-    user = {
-        "userId": "user-123",
-        "devices": ["device-abc"],
-    }
-    user.update(overrides)
-    return {"user": user}

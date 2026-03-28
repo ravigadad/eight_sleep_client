@@ -32,7 +32,7 @@ Each layer only knows the one below it. Callers interact with Sessions, Reposito
 - **TDD** — pytest + respx, tests mirror source structure
 - **Constants are defaults, overridable via constructor**
 
-## Iteration 1: Auth + User Discovery (in progress)
+## Iteration 1: Auth + User Discovery (complete)
 
 Foundation: authenticate with the API and fetch user info.
 

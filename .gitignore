@@ -15,6 +15,9 @@ build/
 .vscode/
 .idea/
 
+# direnv
+.envrc
+
 # Claude Code
 .claude/
 

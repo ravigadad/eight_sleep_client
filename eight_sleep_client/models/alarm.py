@@ -11,17 +11,41 @@ from .settings import Settings, settings_property
 class Alarm:
     """An alarm on the Eight Sleep Pod."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    WRITABLE_FIELDS = frozenset({
+        "id", "enabled", "time", "skipNext", "snoozing", "isSuggested",
+        "repeat", "vibration", "thermal", "audio", "smart", "tags",
+    })
+
+    def __init__(self, data: dict[str, Any], repository: Any = None) -> None:
         self._data = data
+        self._repository = repository
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], repository: Any = None) -> Alarm:
+        """Create an Alarm from a dict."""
+        return cls(data, repository=repository)
+
+    # --- mutations ---
+
+    async def update(self, **changes: Any) -> None:
+        """Apply changes to the alarm data and persist."""
+        self._data.update(changes)
+        await self.save()
+
+    async def save(self) -> None:
+        """Persist the current writable state to the API."""
+        response = await self._repository.update(self.id, self.writable_data())
+        self._data = response["alarm"]
+
+    def writable_data(self) -> dict[str, Any]:
+        """Return only the writable fields from the alarm data."""
+        return {k: v for k, v in self._data.items() if k in self.WRITABLE_FIELDS}
+
+    # --- properties ---
 
     def _datetime(self, key: str) -> datetime | None:
         value = self._data.get(key)
         return datetime.fromisoformat(value) if value else None
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Alarm:
-        """Create an Alarm from a dict."""
-        return cls(data)
 
     @property
     def id(self) -> str:

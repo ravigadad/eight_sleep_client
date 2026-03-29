@@ -3,9 +3,10 @@
 from datetime import datetime, timezone
 
 import pytest
-from mockito import patch
+from mockito import mock, when, patch
 
 import eight_sleep_client.models.alarm as alarm_module
+from eight_sleep_client.repositories.alarm_repository import AlarmRepository
 from eight_sleep_client.models.alarm import (
     Alarm,
     AlarmAudioSettings,
@@ -47,6 +48,56 @@ def test_alarm_from_dict_exposes_fields():
     assert alarm.skipped_until == datetime(1970, 1, 1, tzinfo=timezone.utc)
     assert alarm.dismissed_until == datetime(2026, 3, 27, 21, 39, 30, tzinfo=timezone.utc)
     assert alarm.tags == ["routine-abc"]
+
+
+async def test_save_sends_writable_data_and_refreshes():
+    repository = mock(AlarmRepository)
+    alarm = Alarm.from_dict({"id": "alarm-1"}, repository=repository)
+
+    writable = {"id": "alarm-1", "stubbed": True}
+    when(alarm).writable_data().thenReturn(writable)
+
+    response_alarm = {"id": "alarm-1", "refreshed": True}
+    when(repository).update("alarm-1", writable).thenReturn({"alarm": response_alarm})
+
+    await alarm.save()
+
+    assert alarm._data is response_alarm
+
+
+async def test_update_sets_fields_and_saves():
+    alarm = Alarm.from_dict({"id": "alarm-1", "skipNext": False})
+    when(alarm).save().thenReturn(None)
+
+    await alarm.update(skipNext=True)
+
+    assert alarm._data["skipNext"] is True
+
+
+async def test_update_sets_fields_then_saves():
+    alarm = Alarm.from_dict({"id": "alarm-1", "skipNext": False})
+    saved_data = {}
+    when(alarm).save().thenAnswer(lambda: saved_data.update(alarm._data))
+
+    await alarm.update(skipNext=True)
+
+    assert saved_data["skipNext"] is True
+
+
+def test_writable_data_reads_from_live_data():
+    alarm = Alarm.from_dict({})
+    alarm._data = {
+        "id": "alarm-1",
+        "enabled": True,
+        "skipNext": True,
+        "nextTimestamp": "should-be-excluded",
+    }
+
+    assert alarm.writable_data() == {
+        "id": "alarm-1",
+        "enabled": True,
+        "skipNext": True,
+    }
 
 
 def test_alarm_timestamps_none_when_disabled():

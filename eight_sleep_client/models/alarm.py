@@ -27,6 +27,30 @@ class Alarm:
 
     # --- mutations ---
 
+    async def enable(self, enabled: bool = True) -> None:
+        """Enable or disable the alarm."""
+        await self.update(enabled=enabled)
+
+    async def disable(self) -> None:
+        """Disable the alarm."""
+        await self.enable(False)
+
+    async def skip(self, skip: bool = True) -> None:
+        """Skip or unskip the next occurrence."""
+        await self.update(skipNext=skip)
+
+    async def unskip(self) -> None:
+        """Unskip the next occurrence."""
+        await self.skip(False)
+
+    async def snooze(self, minutes: int = 9) -> None:
+        """Snooze a ringing alarm."""
+        await self._repository.snooze(self.id, minutes)
+
+    async def dismiss(self) -> None:
+        """Dismiss or stop a ringing alarm."""
+        await self._repository.dismiss(self.id)
+
     async def delete(self) -> None:
         """Delete this alarm."""
         await self._repository.delete(self.id)

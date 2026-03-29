@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 
 import pytest
-from mockito import mock, when, patch
+from mockito import mock, when, expect, patch
 
 import eight_sleep_client.models.alarm as alarm_module
 from eight_sleep_client.repositories.alarm_repository import AlarmRepository
@@ -65,13 +65,60 @@ async def test_save_sends_writable_data_and_refreshes():
     assert alarm._data is response_alarm
 
 
-async def test_update_sets_fields_and_saves():
-    alarm = Alarm.from_dict({"id": "alarm-1", "skipNext": False})
-    when(alarm).save().thenReturn(None)
+async def test_enable():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).update(enabled=True)
+    await alarm.enable()
 
-    await alarm.update(skipNext=True)
 
-    assert alarm._data["skipNext"] is True
+async def test_enable_false():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).update(enabled=False)
+    await alarm.enable(False)
+
+
+async def test_disable():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).enable(False)
+    await alarm.disable()
+
+
+async def test_skip():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).update(skipNext=True)
+    await alarm.skip()
+
+
+async def test_skip_false():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).update(skipNext=False)
+    await alarm.skip(False)
+
+
+async def test_unskip():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).skip(False)
+    await alarm.unskip()
+
+async def test_snooze():
+    repository = mock(AlarmRepository)
+    alarm = Alarm.from_dict({"id": "alarm-1"}, repository=repository)
+    expect(repository, times=1).snooze("alarm-1", 5)
+    await alarm.snooze(5)
+
+
+async def test_snooze_defaults_to_9_minutes():
+    repository = mock(AlarmRepository)
+    alarm = Alarm.from_dict({"id": "alarm-1"}, repository=repository)
+    expect(repository, times=1).snooze("alarm-1", 9)
+    await alarm.snooze()
+
+
+async def test_dismiss():
+    repository = mock(AlarmRepository)
+    alarm = Alarm.from_dict({"id": "alarm-1"}, repository=repository)
+    expect(repository, times=1).dismiss("alarm-1")
+    await alarm.dismiss()
 
 
 async def test_delete_delegates_to_repository():

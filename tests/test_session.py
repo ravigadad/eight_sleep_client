@@ -1,14 +1,15 @@
 """Tests for Session."""
 
 import httpx
+import pytest
 from mockito import mock, when, verify, patch
 
 import eight_sleep_client.client as client_module
+import eight_sleep_client.session as session_module
 from eight_sleep_client.session import Session
 from eight_sleep_client.client import Client
 from eight_sleep_client.api.constants import DEFAULT_CLIENT_API_URL
 from eight_sleep_client.models.user_info import UserInfo
-import eight_sleep_client.session as session_module
 from eight_sleep_client.repositories.alarm_repository import AlarmRepository
 
 USERS_ME_URL = f"{DEFAULT_CLIENT_API_URL}/users/me"
@@ -49,18 +50,17 @@ def test_session_exposes_device_ids():
     assert session.device_ids == ["dev1", "dev2"]
 
 
-# --- get ---
+# --- HTTP methods ---
 
 
-async def test_get_interpolates_user_id_and_delegates_to_client():
+@pytest.mark.parametrize("method", ["get", "put", "delete"])
+async def test_http_methods_interpolate_and_delegate(method):
     mock_client = mock(Client)
     user_info = mock({"user_id": "user-123"}, spec=UserInfo)
-    when(mock_client).get("app", "/v2/users/user-123/alarms").thenReturn("get_response")
+    getattr(when(mock_client), method)("app", "/v2/users/user-123/alarms").thenReturn("response")
 
     session = Session(client=mock_client, user_info=user_info)
-    result = await session.get("app", "/v2/users/{user_id}/alarms")
-
-    assert result == "get_response"
+    assert await getattr(session, method)("app", "/v2/users/{user_id}/alarms") == "response"
 
 
 # --- alarms ---

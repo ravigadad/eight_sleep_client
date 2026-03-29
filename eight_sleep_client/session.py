@@ -50,7 +50,15 @@ class Session:
     def alarms(self) -> AlarmRepository:
         return AlarmRepository(self)
 
+    def _resolve(self, path: str) -> str:
+        """Interpolate user context into a path template."""
+        return path.format_map({"user_id": self.user_id})
+
     async def get(self, api: str, path: str) -> dict:
-        """Interpolate user context into path and delegate to Client."""
-        resolved = path.format_map({"user_id": self.user_id})
-        return await self._client.get(api, resolved)
+        return await self._client.get(api, self._resolve(path))
+
+    async def put(self, api: str, path: str, **kwargs: object) -> dict:
+        return await self._client.put(api, self._resolve(path), **kwargs)
+
+    async def delete(self, api: str, path: str) -> dict:
+        return await self._client.delete(api, self._resolve(path))

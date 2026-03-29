@@ -53,7 +53,16 @@ class Client:
 
         return response.json()
 
-    async def get(self, api: str, path: str) -> dict:
-        """Make an authenticated GET request to the given API and path."""
+    async def api_request(self, method: str, api: str, path: str, **kwargs: object) -> dict:
+        """Make an authenticated request to the given API and path."""
         url = f"{BASE_URLS[api]}{path}"
-        return await self.request("GET", url)
+        return await self.request(method, url, **kwargs)
+
+    async def get(self, api: str, path: str) -> dict:
+        return await self.api_request("GET", api, path)
+
+    async def put(self, api: str, path: str, **kwargs: object) -> dict:
+        return await self.api_request("PUT", api, path, **kwargs)
+
+    async def delete(self, api: str, path: str) -> dict:
+        return await self.api_request("DELETE", api, path)

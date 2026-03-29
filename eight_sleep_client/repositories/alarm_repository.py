@@ -26,6 +26,20 @@ class AlarmRepository:
         response = await self._session.post("app", "/v1/users/{user_id}/alarms", json=data)
         return Alarm.from_dict(response["alarm"], repository=self)
 
+    async def snooze(self, alarm_id: str, minutes: int) -> None:
+        """Snooze a ringing alarm."""
+        await self._session.put(
+            "app", f"/v1/users/{{user_id}}/alarms/{alarm_id}/snooze",
+            json={"snoozeMinutes": minutes, "ignoreDeviceErrors": False},
+        )
+
+    async def dismiss(self, alarm_id: str) -> None:
+        """Dismiss or stop an alarm."""
+        await self._session.put(
+            "app", f"/v1/users/{{user_id}}/alarms/{alarm_id}/dismiss",
+            json={"ignoreDeviceErrors": False},
+        )
+
     async def delete(self, alarm_id: str) -> None:
         """Delete an alarm."""
         await self._session.delete("app", f"/v1/users/{{user_id}}/alarms/{alarm_id}")

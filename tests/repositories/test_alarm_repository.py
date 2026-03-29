@@ -1,6 +1,6 @@
 """Tests for AlarmRepository."""
 
-from mockito import mock, when, verify
+from mockito import mock, when, verify, expect
 
 from eight_sleep_client.models.alarm import Alarm
 from eight_sleep_client.repositories.alarm_repository import AlarmRepository
@@ -57,6 +57,39 @@ async def test_delete_sends_delete_to_alarm_endpoint():
     await repository.delete("alarm-1")
 
     verify(session).delete("app", "/v1/users/{user_id}/alarms/alarm-1")
+
+
+# --- snooze ---
+
+
+async def test_snooze_puts_to_snooze_endpoint():
+    session = mock(Session)
+    repository = AlarmRepository(session)
+
+    expect(session, times=1).put(
+        "app", "/v1/users/{user_id}/alarms/alarm-1/snooze",
+        json={"snoozeMinutes": 5, "ignoreDeviceErrors": False},
+    ).thenReturn(None)
+
+    await repository.snooze("alarm-1", 5)
+
+
+# --- dismiss ---
+
+
+async def test_dismiss_puts_to_dismiss_endpoint():
+    session = mock(Session)
+    repository = AlarmRepository(session)
+
+    expect(session, times=1).put(
+        "app", "/v1/users/{user_id}/alarms/alarm-1/dismiss",
+        json={"ignoreDeviceErrors": False},
+    ).thenReturn(None)
+
+    await repository.dismiss("alarm-1")
+
+
+# --- update ---
 
 
 async def test_update_puts_data_and_returns_alarm_dict():

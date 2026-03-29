@@ -1,8 +1,7 @@
 """Tests for Session."""
 
-import httpx
 import pytest
-from mockito import mock, when, verify, patch
+from mockito import mock, when, expect, patch
 
 import eight_sleep_client.client as client_module
 import eight_sleep_client.session as session_module
@@ -18,21 +17,21 @@ USERS_ME_URL = f"{DEFAULT_CLIENT_API_URL}/users/me"
 # --- create ---
 
 
-async def test_create_delegates_to_client_and_user_info():
+async def test_create_authenticates_fetches_user_and_returns_session():
     mock_client = mock(Client)
     user_data = {"userId": "user-123", "devices": ["device-abc"]}
 
-    when(mock_client).authenticate().thenReturn(None)
+    client_factory = mock()
+    when(client_factory).__call__("the_http", email="user@example.com", password="pass123").thenReturn(mock_client)
+    expect(mock_client, times=1).authenticate()
     when(mock_client).request("GET", USERS_ME_URL).thenReturn({"user": user_data})
     when(UserInfo).from_dict(user_data).thenReturn("user_info")
-    patch(client_module, "Client", lambda *args, **kwargs: mock_client)
+    patch(client_module, "Client", client_factory)
 
-    async with httpx.AsyncClient() as http:
-        session = await Session.create(http, email="user@example.com", password="pass123")
+    session = await Session.create("the_http", email="user@example.com", password="pass123")
 
-    assert isinstance(session, Session)
-    verify(mock_client).request("GET", USERS_ME_URL)
-    verify(UserInfo).from_dict(user_data)
+    assert session._client is mock_client
+    assert session._user_info == "user_info"
 
 
 # --- properties ---
@@ -40,13 +39,13 @@ async def test_create_delegates_to_client_and_user_info():
 
 def test_session_exposes_user_id():
     user_info = mock({"user_id": "user-abc"}, spec=UserInfo)
-    session = Session(client=mock(Client), user_info=user_info)
+    session = Session(client="a_client", user_info=user_info)
     assert session.user_id == "user-abc"
 
 
 def test_session_exposes_device_ids():
     user_info = mock({"device_ids": ["dev1", "dev2"]}, spec=UserInfo)
-    session = Session(client=mock(Client), user_info=user_info)
+    session = Session(client="a_client", user_info=user_info)
     assert session.device_ids == ["dev1", "dev2"]
 
 

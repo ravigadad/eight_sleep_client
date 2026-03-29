@@ -28,20 +28,6 @@ def test_from_dict_defaults_missing_devices_to_empty():
 
 
 def test_user_info_is_frozen():
-    info = _make_user_info()
+    info = UserInfo.from_dict({"userId": "abc123"})
     with pytest.raises(dataclasses.FrozenInstanceError):
         info.user_id = "changed"  # type: ignore[misc]
-
-
-# --- helpers ---
-
-
-def _make_user_info(**overrides) -> UserInfo:
-    """Create a UserInfo with sensible defaults."""
-    defaults = {
-        "user_id": "test-user-id",
-        "device_ids": ["test-device-id"],
-        "raw": {"userId": "test-user-id", "devices": ["test-device-id"]},
-    }
-    defaults.update(overrides)
-    return UserInfo(**defaults)

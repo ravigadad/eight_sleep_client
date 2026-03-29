@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import cached_property
+
 import httpx
 
 from .api.authenticator import Authenticator
@@ -22,8 +24,13 @@ class Client:
 
     def __init__(self, http: httpx.AsyncClient, email: str, password: str) -> None:
         self._http = http
-        self._authenticator = Authenticator(http, email=email, password=password)
+        self._email = email
+        self._password = password
         self._authenticated = False
+
+    @cached_property
+    def _authenticator(self) -> Authenticator:
+        return Authenticator(self._http, email=self._email, password=self._password)
 
     async def authenticate(self) -> None:
         """Authenticate with the API."""

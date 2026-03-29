@@ -2,7 +2,7 @@
 
 import httpx
 import pytest
-from mockito import mock, when, verify
+from mockito import mock, when, expect
 
 from tests.helpers import mock_response
 from eight_sleep_client.api.authenticator import Authenticator
@@ -14,31 +14,16 @@ from eight_sleep_client.models.token import Token
 # --- authenticate ---
 
 
-async def test_authenticate_sends_correct_body():
+async def test_authenticate_returns_token_from_api_response():
     mock_http = mock(httpx.AsyncClient)
-    _stub_token()
+    mock_token = mock({"is_expired": False}, spec=Token)
     when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
         mock_response(200, _auth_response())
     )
+    when(Token).from_dict(_auth_response()).thenReturn(mock_token)
 
     auth = Authenticator(mock_http, email="user@example.com", password="pass123")
-    await auth.authenticate()
-
-    verify(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body())
-
-
-async def test_authenticate_delegates_to_token_factory():
-    mock_http = mock(httpx.AsyncClient)
-    mock_token = _stub_token()
-    when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
-        mock_response(200, _auth_response())
-    )
-
-    auth = Authenticator(mock_http, email="user@example.com", password="pass123")
-    token = await auth.authenticate()
-
-    assert token is mock_token
-    verify(Token).from_dict(_auth_response())
+    assert await auth.authenticate() is mock_token
 
 
 async def test_authenticate_invalid_credentials():
@@ -78,46 +63,29 @@ async def test_authenticate_network_error():
 
 
 async def test_ensure_valid_token_authenticates_when_no_token():
-    mock_http = mock(httpx.AsyncClient)
-    mock_token = _stub_token()
-    when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
-        mock_response(200, _auth_response())
-    )
+    mock_token = mock(Token)
+    auth = Authenticator("http", email="x", password="y")
+    expect(auth, times=1).authenticate().thenReturn(mock_token)
 
-    auth = Authenticator(mock_http, email="user@example.com", password="pass123")
-    token = await auth.ensure_valid_token()
-
-    assert token is mock_token
+    assert await auth.ensure_valid_token() is mock_token
 
 
 async def test_ensure_valid_token_returns_cached_when_fresh():
-    mock_http = mock(httpx.AsyncClient)
-    _stub_token(is_expired=False)
-    when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
-        mock_response(200, _auth_response())
-    )
+    fresh_token = mock({"is_expired": False}, spec=Token)
+    auth = Authenticator("http", email="x", password="y")
+    auth._token = fresh_token
 
-    auth = Authenticator(mock_http, email="user@example.com", password="pass123")
-    await auth.ensure_valid_token()
-    await auth.ensure_valid_token()
-
-    verify(mock_http, times=1).post(DEFAULT_AUTH_URL, json=_expected_body())
+    assert await auth.ensure_valid_token() is fresh_token
 
 
 async def test_ensure_valid_token_refreshes_when_expired():
-    mock_http = mock(httpx.AsyncClient)
     expired_token = mock({"is_expired": True}, spec=Token)
-    fresh_token = mock({"is_expired": False}, spec=Token)
-    when(Token).from_dict(...).thenReturn(expired_token).thenReturn(fresh_token)
-    when(mock_http).post(DEFAULT_AUTH_URL, json=_expected_body()).thenReturn(
-        mock_response(200, _auth_response())
-    )
+    fresh_token = mock(Token)
+    auth = Authenticator("http", email="x", password="y")
+    auth._token = expired_token
+    expect(auth, times=1).authenticate().thenReturn(fresh_token)
 
-    auth = Authenticator(mock_http, email="user@example.com", password="pass123")
-    await auth.ensure_valid_token()
-    await auth.ensure_valid_token()
-
-    verify(mock_http, times=2).post(DEFAULT_AUTH_URL, json=_expected_body())
+    assert await auth.ensure_valid_token() is fresh_token
 
 
 # --- token property ---
@@ -131,11 +99,6 @@ async def test_token_is_none_before_authenticate():
 
 # --- helpers ---
 
-
-def _stub_token(is_expired: bool = False) -> Token:
-    mock_token = mock({"is_expired": is_expired}, spec=Token)
-    when(Token).from_dict(...).thenReturn(mock_token)
-    return mock_token
 
 
 def _expected_body(email: str = "user@example.com", password: str = "pass123") -> dict:
@@ -155,5 +118,3 @@ def _auth_response() -> dict:
         "expires_in": 72000,
         "userId": "test-user-id",
     }
-
-

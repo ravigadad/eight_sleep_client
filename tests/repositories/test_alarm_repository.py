@@ -7,9 +7,6 @@ from eight_sleep_client.repositories.alarm_repository import AlarmRepository
 from eight_sleep_client.session import Session
 
 
-# --- all ---
-
-
 async def test_all_constructs_alarms_from_response():
     session = mock(Session)
     when(session).get("app", "/v2/users/{user_id}/alarms").thenReturn({
@@ -31,18 +28,15 @@ async def test_all_returns_empty_list_when_no_alarms():
     assert await repository.all() == []
 
 
-# --- update ---
-
-
 async def test_create_posts_data_and_returns_alarm():
     session = mock(Session)
-    data = {"time": "08:00:00", "enabled": True}
+    data = {"foo": "bar"}
     when(session).post("app", "/v1/users/{user_id}/alarms", json=data).thenReturn({
-        "alarm": {"id": "new-1", "time": "08:00:00"},
+        "alarm": {"baz": "narf"},
     })
 
     repository = AlarmRepository(session)
-    when(Alarm).from_dict({"id": "new-1", "time": "08:00:00"}, repository=repository).thenReturn("new_alarm")
+    when(Alarm).from_dict({"baz": "narf"}, repository=repository).thenReturn("new_alarm")
 
     result = await repository.create(data)
 
@@ -59,9 +53,6 @@ async def test_delete_sends_delete_to_alarm_endpoint():
     verify(session).delete("app", "/v1/users/{user_id}/alarms/alarm-1")
 
 
-# --- snooze ---
-
-
 async def test_snooze_puts_to_snooze_endpoint():
     session = mock(Session)
     repository = AlarmRepository(session)
@@ -72,9 +63,6 @@ async def test_snooze_puts_to_snooze_endpoint():
     ).thenReturn(None)
 
     await repository.snooze("alarm-1", 5)
-
-
-# --- dismiss ---
 
 
 async def test_dismiss_puts_to_dismiss_endpoint():
@@ -89,13 +77,10 @@ async def test_dismiss_puts_to_dismiss_endpoint():
     await repository.dismiss("alarm-1")
 
 
-# --- update ---
-
-
 async def test_update_puts_data_and_returns_alarm_dict():
     session = mock(Session)
-    data = {"id": "alarm-1", "enabled": True}
-    alarm_dict = {"id": "alarm-1", "enabled": True, "nextTimestamp": "2026-04-01T14:30:00Z"}
+    data = {"foo": "bar"}
+    alarm_dict = {"baz": "narf"}
     when(session).put("app", "/v1/users/{user_id}/alarms/alarm-1", json=data).thenReturn({
         "alarm": alarm_dict,
         "alarms": [],

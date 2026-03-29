@@ -266,6 +266,14 @@ Response:
 }
 ```
 
+**Timestamp fields:**
+- `nextTimestamp` — when the alarm will next fire (or is currently firing). Absent when disabled.
+- `startTimestamp` — start of the alarm's active window. Always observed equal to `nextTimestamp`.
+- `endTimestamp` — end of the active window, always 20 minutes after `startTimestamp`. This is likely how long the Pod will attempt to wake you (vibration, thermal ramp) before auto-stopping.
+- All three advance together when snoozed. The distinction between `nextTimestamp` and `startTimestamp` may matter for smart wake alarms where the thermal ramp begins before vibration, but this hasn't been confirmed.
+
+**No explicit "ringing" state:** The API does not have a field indicating the alarm is currently active. A ringing alarm looks the same as a pending one — `snoozing: false`, `dismissedUntil` at epoch. To determine if an alarm is currently ringing, compare the current time against the `startTimestamp`/`endTimestamp` window.
+
 ### Create Alarm
 
 ```
@@ -307,6 +315,25 @@ PUT https://app-api.8slp.net/v1/users/{userId}/alarms/{alarmId}
 
 Body: full alarm object with updated fields. Top-level `time`, `thermal`, `vibration`, etc. are changed permanently.
 
+**The API requires the full writable alarm payload.** Partial updates fail with validation errors (e.g. missing `repeat` causes "Only repeat alarms can skip next"). The `id` field must also be present in the body.
+
+Writable fields (sent by the iOS app):
+- `id`, `enabled`, `time`, `skipNext`, `snoozing`, `isSuggested`
+- `repeat` (`enabled`, `weekDays`)
+- `vibration` (`enabled`, `powerLevel`, `pattern`)
+- `thermal` (`enabled`, `level`)
+- `audio` (`enabled`, `level`)
+- `smart` (`lightSleepEnabled`, `sleepCapEnabled`, `sleepCapMinutes`)
+- `tags`
+
+Read-only fields (returned by GET, not sent by the app on PUT):
+- `nextTimestamp`, `startTimestamp`, `endTimestamp` — absent when alarm is disabled
+- `dismissedUntil`, `skippedUntil`, `snoozedUntil`
+
+Note: the iOS app sends `skippedUntil` during unskip/disable/enable, but testing confirms the server does not require it. The standard writable fields are sufficient for all mutations.
+
+The API silently ignores read-only fields if included in the PUT body, but sending them is not recommended.
+
 ### Override Next Occurrence Only
 
 Same `PUT` endpoint, but include a `oneTimeOverride` object alongside the unchanged top-level fields:
@@ -329,15 +356,57 @@ Response adds `enabledSince` and `enabledUntil` timestamps to the override. Afte
 
 ### Skip Next Occurrence
 
-Same `PUT` endpoint with `skipNext: true`. Server sets `skippedUntil` and `dismissedUntil` to the skipped alarm time and advances `nextTimestamp` to the following occurrence.
+Same `PUT` endpoint with full writable payload and `skipNext: true`. Do not send `skippedUntil` — the server sets it automatically along with `dismissedUntil`, and advances `nextTimestamp` to the following occurrence.
+
+**Important:** Only repeating alarms can be skipped. Non-repeating alarms return "Only repeat alarms can skip next".
 
 ### Unskip
 
-Same `PUT` endpoint with `skipNext: false`. Server clears `skippedUntil` and `dismissedUntil` back to epoch.
+Same `PUT` endpoint with full writable payload and `skipNext: false`. The server resets `skippedUntil`, `dismissedUntil`, and `nextTimestamp` automatically.
 
 ### Enable/Disable Alarm
 
-Same `PUT` endpoint with `enabled: false` or `enabled: true`.
+Same `PUT` endpoint with full writable payload and `enabled: true` or `enabled: false`.
+
+### Dismiss / Stop Alarm
+
+```
+PUT https://app-api.8slp.net/v1/users/{userId}/alarms/{alarmId}/dismiss
+```
+
+Body:
+```json
+{
+  "ignoreDeviceErrors": false
+}
+```
+
+Used for both dismissing an alarm early (before it rings) and stopping a ringing alarm. There is no separate `/stop` endpoint — the app uses `/dismiss` for both actions. Response returns the full `alarms` list.
+
+Note: the legacy pyEight integration used `PUT /v1/users/{userId}/routines` with `{"alarm": {"alarmId": "...", "dismissed": true}}` — that's the old API. The modern app uses this dedicated `/dismiss` endpoint.
+
+### Snooze Alarm
+
+```
+PUT https://app-api.8slp.net/v1/users/{userId}/alarms/{alarmId}/snooze
+```
+
+Body:
+```json
+{
+  "snoozeMinutes": 9,
+  "ignoreDeviceErrors": false
+}
+```
+
+Response: `200 OK` with empty body. Server sets `snoozing: true`, `snoozedUntil` to current time + snooze minutes, and advances `nextTimestamp`/`startTimestamp`/`endTimestamp` to the new ring time.
+
+While snoozed, the alarm state shows:
+- `snoozing: true`
+- `snoozedUntil: "2026-03-29T03:40:00Z"` (when it will ring again)
+- `nextTimestamp` / `startTimestamp` advanced to match `snoozedUntil`
+- `endTimestamp` advanced (new 20-minute window from the snoozed time)
+
 
 ### Delete Alarm
 

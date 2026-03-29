@@ -132,6 +132,44 @@ async def test_delete_delegates_to_repository():
     verify(repository).delete("alarm-1")
 
 
+async def test_override_next_merges_with_current_settings():
+    alarm = Alarm.from_dict({
+        "time": "08:30:00",
+        "vibration": {"enabled": True, "powerLevel": 50, "pattern": "RISE"},
+        "thermal": {"enabled": False, "level": 20},
+        "audio": {"enabled": False, "level": 30},
+        "smart": {"lightSleepEnabled": True, "sleepCapEnabled": False, "sleepCapMinutes": 480},
+    })
+    expect(alarm, times=1).update(oneTimeOverride={
+        "time": "08:45:00",
+        "vibration": {"enabled": True, "powerLevel": 50, "pattern": "RISE"},
+        "thermal": {"enabled": True, "level": 100},
+        "audio": {"enabled": False, "level": 30},
+        "smart": {"lightSleepEnabled": True, "sleepCapEnabled": False, "sleepCapMinutes": 480},
+    })
+
+    await alarm.override_next(time="08:45:00", thermal={"enabled": True, "level": 100})
+
+
+async def test_clear_override():
+    alarm = Alarm.from_dict({})
+    expect(alarm, times=1).update(oneTimeOverride=None)
+    await alarm.clear_override()
+
+
+def test_writable_data_strips_none_values():
+    alarm = Alarm.from_dict({})
+    alarm._data = {
+        "id": "alarm-1",
+        "enabled": True,
+        "oneTimeOverride": None,
+    }
+    assert alarm.writable_data() == {
+        "id": "alarm-1",
+        "enabled": True,
+    }
+
+
 async def test_update_sets_fields_then_saves():
     alarm = Alarm.from_dict({"id": "alarm-1", "skipNext": False})
     saved_data = {}

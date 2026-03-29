@@ -352,7 +352,11 @@ Same `PUT` endpoint, but include a `oneTimeOverride` object alongside the unchan
 }
 ```
 
-Response adds `enabledSince` and `enabledUntil` timestamps to the override. After `enabledUntil` passes, the override auto-expires.
+Response adds `enabledSince` and `enabledUntil` timestamps to the override. After `enabledUntil` passes, the override auto-expires. The `nextTimestamp` advances to reflect the overridden time.
+
+To clear an override, send the standard writable payload without the `oneTimeOverride` field. The server removes the override and resets `nextTimestamp` to the original time.
+
+**All five fields are required** in the `oneTimeOverride` object: `time`, `vibration`, `thermal`, `audio`, `smart`. Partial overrides (e.g. just `time` and `thermal`) are silently ignored — the server returns an empty override and no change takes effect.
 
 ### Skip Next Occurrence
 

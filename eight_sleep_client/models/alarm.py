@@ -14,6 +14,7 @@ class Alarm:
     WRITABLE_FIELDS = frozenset({
         "id", "enabled", "time", "skipNext", "snoozing", "isSuggested",
         "repeat", "vibration", "thermal", "audio", "smart", "tags",
+        "oneTimeOverride",
     })
 
     def __init__(self, data: dict[str, Any], repository: Any = None) -> None:
@@ -43,6 +44,25 @@ class Alarm:
         """Unskip the next occurrence."""
         await self.skip(False)
 
+    async def override_next(self, **overrides: Any) -> None:
+        """Override the next occurrence with different settings.
+
+        Only the fields you pass are changed; the rest are filled
+        from the alarm's current settings.
+        """
+        override = {
+            "time": overrides.get("time", self._data["time"]),
+            "vibration": overrides.get("vibration", self._data["vibration"]),
+            "thermal": overrides.get("thermal", self._data["thermal"]),
+            "audio": overrides.get("audio", self._data["audio"]),
+            "smart": overrides.get("smart", self._data["smart"]),
+        }
+        await self.update(oneTimeOverride=override)
+
+    async def clear_override(self) -> None:
+        """Remove a one-time override."""
+        await self.update(oneTimeOverride=None)
+
     async def snooze(self, minutes: int = 9) -> None:
         """Snooze a ringing alarm."""
         await self._repository.snooze(self.id, minutes)
@@ -65,8 +85,8 @@ class Alarm:
         self._data = await self._repository.update(self.id, self.writable_data())
 
     def writable_data(self) -> dict[str, Any]:
-        """Return only the writable fields from the alarm data."""
-        return {k: v for k, v in self._data.items() if k in self.WRITABLE_FIELDS}
+        """Return only the writable fields from the alarm data, stripping None values."""
+        return {k: v for k, v in self._data.items() if k in self.WRITABLE_FIELDS and v is not None}
 
     # --- properties ---
 

@@ -28,10 +28,14 @@ Short class names — `Session`, `Client`, `Token` (package provides namespace).
     - `authenticator.py` — Authenticator (token management)
     - `constants.py` — API URLs, default client credentials
     - `exceptions.py` — exception hierarchy
-  - `models/` — data objects (one class per file)
-    - `token.py` — Token
-    - `user_info.py` — UserInfo
+  - `utils.py` — shared utilities (snake_to_camel, camel_to_snake)
+  - `models/` — domain objects
+    - `alarm.py` — Alarm model + settings classes
+    - `settings.py` — Settings metaclass and settings_property descriptor
+    - `token.py` — Token (frozen dataclass, infrastructure)
+    - `user_info.py` — UserInfo (frozen dataclass, infrastructure)
   - `repositories/` — domain repositories (one per domain)
+    - `alarm_repository.py` — AlarmRepository
 - `tests/` — test suite (mirrors source structure)
   - `helpers.py` — shared test helpers (e.g. `mock_response`)
   - `api/` — tests for api/ classes

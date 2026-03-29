@@ -42,7 +42,7 @@ Foundation: authenticate with the API and fetch user info.
 - `Token` — frozen dataclass with `is_expired` property
 - `UserInfo` — frozen dataclass with `from_api_response` factory
 
-## Iteration 2: Alarms
+## Iteration 2: Alarms (complete)
 
 Full CRUD for the `/alarms` API.
 

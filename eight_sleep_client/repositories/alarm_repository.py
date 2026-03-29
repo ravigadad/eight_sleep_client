@@ -21,6 +21,16 @@ class AlarmRepository:
         response = await self._session.get("app", "/v2/users/{user_id}/alarms")
         return [Alarm.from_dict(data, repository=self) for data in response["alarms"]]
 
-    async def update(self, alarm_id: str, data: dict) -> dict | None:
+    async def create(self, data: dict) -> Alarm:
+        """Create a new alarm."""
+        response = await self._session.post("app", "/v1/users/{user_id}/alarms", json=data)
+        return Alarm.from_dict(response["alarm"], repository=self)
+
+    async def delete(self, alarm_id: str) -> None:
+        """Delete an alarm."""
+        await self._session.delete("app", f"/v1/users/{{user_id}}/alarms/{alarm_id}")
+
+    async def update(self, alarm_id: str, data: dict) -> dict:
         """PUT the full writable payload for an alarm."""
-        return await self._session.put("app", f"/v1/users/{{user_id}}/alarms/{alarm_id}", json=data)
+        response = await self._session.put("app", f"/v1/users/{{user_id}}/alarms/{alarm_id}", json=data)
+        return response["alarm"]

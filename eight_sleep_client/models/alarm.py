@@ -27,6 +27,10 @@ class Alarm:
 
     # --- mutations ---
 
+    async def delete(self) -> None:
+        """Delete this alarm."""
+        await self._repository.delete(self.id)
+
     async def update(self, **changes: Any) -> None:
         """Apply changes to the alarm data and persist."""
         self._data.update(changes)
@@ -34,8 +38,7 @@ class Alarm:
 
     async def save(self) -> None:
         """Persist the current writable state to the API."""
-        response = await self._repository.update(self.id, self.writable_data())
-        self._data = response["alarm"]
+        self._data = await self._repository.update(self.id, self.writable_data())
 
     def writable_data(self) -> dict[str, Any]:
         """Return only the writable fields from the alarm data."""

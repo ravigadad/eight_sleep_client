@@ -58,7 +58,7 @@ async def test_save_sends_writable_data_and_refreshes():
     when(alarm).writable_data().thenReturn(writable)
 
     response_alarm = {"id": "alarm-1", "refreshed": True}
-    when(repository).update("alarm-1", writable).thenReturn({"alarm": response_alarm})
+    when(repository).update("alarm-1", writable).thenReturn(response_alarm)
 
     await alarm.save()
 
@@ -72,6 +72,17 @@ async def test_update_sets_fields_and_saves():
     await alarm.update(skipNext=True)
 
     assert alarm._data["skipNext"] is True
+
+
+async def test_delete_delegates_to_repository():
+    from mockito import verify
+    repository = mock(AlarmRepository)
+    alarm = Alarm.from_dict({"id": "alarm-1"}, repository=repository)
+    when(repository).delete("alarm-1").thenReturn(None)
+
+    await alarm.delete()
+
+    verify(repository).delete("alarm-1")
 
 
 async def test_update_sets_fields_then_saves():

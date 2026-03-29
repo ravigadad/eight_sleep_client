@@ -53,7 +53,7 @@ def test_session_exposes_device_ids():
 # --- HTTP methods ---
 
 
-@pytest.mark.parametrize("method", ["get", "put", "delete"])
+@pytest.mark.parametrize("method", ["get", "post", "put", "delete"])
 async def test_http_methods_interpolate_and_delegate(method):
     mock_client = mock(Client)
     user_info = mock({"user_id": "user-123"}, spec=UserInfo)

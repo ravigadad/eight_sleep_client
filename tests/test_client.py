@@ -104,6 +104,7 @@ async def test_request_server_error():
 
 @pytest.mark.parametrize("method,kwargs", [
     ("get", {}),
+    ("post", {"json": {"time": "08:00:00"}}),
     ("put", {"json": {"skipNext": True}}),
     ("delete", {}),
 ])

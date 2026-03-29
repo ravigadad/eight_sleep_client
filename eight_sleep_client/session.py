@@ -57,6 +57,9 @@ class Session:
     async def get(self, api: str, path: str) -> dict:
         return await self._client.get(api, self._resolve(path))
 
+    async def post(self, api: str, path: str, **kwargs: object) -> dict:
+        return await self._client.post(api, self._resolve(path), **kwargs)
+
     async def put(self, api: str, path: str, **kwargs: object) -> dict:
         return await self._client.put(api, self._resolve(path), **kwargs)
 

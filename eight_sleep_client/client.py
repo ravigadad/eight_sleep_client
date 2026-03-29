@@ -61,6 +61,9 @@ class Client:
     async def get(self, api: str, path: str) -> dict:
         return await self.api_request("GET", api, path)
 
+    async def post(self, api: str, path: str, **kwargs: object) -> dict:
+        return await self.api_request("POST", api, path, **kwargs)
+
     async def put(self, api: str, path: str, **kwargs: object) -> dict:
         return await self.api_request("PUT", api, path, **kwargs)
 

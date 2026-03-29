@@ -30,7 +30,7 @@ class Client:
         await self._authenticator.authenticate()
         self._authenticated = True
 
-    async def request(self, method: str, url: str, **kwargs: object) -> dict:
+    async def request(self, method: str, url: str, **kwargs: object) -> dict | None:
         """Make an authenticated API request with automatic 401 retry."""
         if not self._authenticated:
             raise AuthenticationError("Not authenticated — call authenticate() first")
@@ -50,6 +50,9 @@ class Client:
 
         if response.status_code >= 500:
             raise RequestError(f"Server error: {response.status_code}")
+
+        if not response.content:
+            return None
 
         return response.json()
 

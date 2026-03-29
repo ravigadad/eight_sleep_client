@@ -99,6 +99,19 @@ async def test_request_server_error():
         await client.request("GET", ENDPOINT)
 
 
+async def test_request_returns_none_for_empty_body():
+    mock_http = mock(httpx.AsyncClient)
+    _stub_authenticator()
+    response = mock({"status_code": 200, "content": b""}, spec=httpx.Response)
+    when(mock_http).request("PUT", ENDPOINT, headers=any_arg()).thenReturn(response)
+
+    client = Client(mock_http, email="user@example.com", password="pass123")
+    await client.authenticate()
+    result = await client.request("PUT", ENDPOINT)
+
+    assert result is None
+
+
 # --- HTTP method helpers ---
 
 

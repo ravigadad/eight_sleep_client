@@ -14,8 +14,9 @@ class Alarm:
     def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
 
-    def _datetime(self, key: str) -> datetime:
-        return datetime.fromisoformat(self._data[key])
+    def _datetime(self, key: str) -> datetime | None:
+        value = self._data.get(key)
+        return datetime.fromisoformat(value) if value else None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Alarm:
@@ -35,15 +36,15 @@ class Alarm:
         return self._data["enabled"]
 
     @property
-    def next_timestamp(self) -> datetime:
+    def next_timestamp(self) -> datetime | None:
         return self._datetime("nextTimestamp")
 
     @property
-    def start_timestamp(self) -> datetime:
+    def start_timestamp(self) -> datetime | None:
         return self._datetime("startTimestamp")
 
     @property
-    def end_timestamp(self) -> datetime:
+    def end_timestamp(self) -> datetime | None:
         return self._datetime("endTimestamp")
 
     @property

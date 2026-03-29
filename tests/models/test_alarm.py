@@ -49,6 +49,18 @@ def test_alarm_from_dict_exposes_fields():
     assert alarm.tags == ["routine-abc"]
 
 
+def test_alarm_timestamps_none_when_disabled():
+    alarm = Alarm.from_dict({
+        "id": "alarm-123",
+        "time": "08:30:00",
+        "enabled": False,
+    })
+
+    assert alarm.next_timestamp is None
+    assert alarm.start_timestamp is None
+    assert alarm.end_timestamp is None
+
+
 @pytest.mark.parametrize("property_name,class_name", [
     ("vibration", "AlarmVibrationSettings"),
     ("thermal", "AlarmThermalSettings"),

@@ -617,9 +617,67 @@ Notable fields:
 - `currentState.type` — whether the pod is currently active (`off`, `on`, etc.)
 - `settings.scheduleType` — `smart` or `timeBased`
 - `settings.smart` — three-phase temperature schedule: bedtime → initial sleep → final sleep
-- `schedules` — configured bedtime schedules with per-day enablement
+- `settings.schedules[].startSettings.bedtime` — the raw level the pod starts at when the schedule fires (different from `smart.bedTimeLevel` which is the phase target)
 - `nextScheduledTimestamp` — when the pod will next activate
 - `nextBedtimeDisplayWindow` — used by the app to decide when to show bedtime UI
+
+### Temperature State (Full — app-api)
+
+```
+GET https://app-api.8slp.net/v1/users/{userId}/temperature/all
+```
+
+This is the endpoint the app polls. Richer than the client-api endpoint above — includes device info, per-device current state, and historical temperature settings.
+
+Response:
+```json
+{
+  "devices": [
+    {
+      "device": {
+        "deviceId": "string",
+        "side": "solo|left|right",
+        "specialization": "pod"
+      },
+      "currentLevel": 22,
+      "currentDeviceLevel": -33,
+      "overrideLevels": {},
+      "currentState": {
+        "type": "off|smart:bedtime|smart:initial|smart:final",
+        "started": "ISO8601",
+        "instance": {
+          "timestamp": "ISO8601",
+          "startedFrom": "user-initiated|scheduled"
+        }
+      },
+      "smart": {
+        "bedTimeLevel": 18,
+        "initialSleepLevel": 15,
+        "finalSleepLevel": 8
+      }
+    }
+  ],
+  "temperatureSettings": [
+    {
+      "name": "deviceId or 'pod'",
+      "bedTimeLevel": 18,
+      "initialSleepLevel": 15,
+      "finalSleepLevel": 8
+    }
+  ],
+  "nextScheduledTimestamp": "ISO8601",
+  "schedules": [{ "...same as client-api..." }],
+  "currentSchedule": { "..." },
+  "nextSchedule": { "..." }
+}
+```
+
+Notable differences from the client-api endpoint:
+- `devices[]` — per-device/side with current state, levels, and overrides. Shared pods would have two entries.
+- `currentDeviceLevel` — raw hardware target (different from user-facing `currentLevel`)
+- `overrideLevels` — tonight-only overrides, empty `{}` when none active
+- `temperatureSettings[]` — saved smart levels for every device the user has ever used (historical)
+- `currentState.startedFrom` — distinguishes manual turn-on from scheduled
 
 ---
 
@@ -691,6 +749,7 @@ Notes:
 - Level range observed: `-20` to `20` (relative adjustment, not absolute)
 - App sends rapid PUTs (~1/sec) as user taps up/down
 - Override clears automatically when turned off or at next scheduled session
+- **Casing inconsistency**: PUT payload uses `bedTime` (camelCase with capital T), but the response returns `bedtime` (all lowercase) in `overrideLevels`
 
 ### Adjust Temperature (Permanent — "All Nights")
 
@@ -1667,7 +1726,6 @@ On cold start, the app fires ~70 requests in ~2 seconds. Key categories:
 
 Seen in app traffic but not yet documented in detail:
 
-- `GET /v1/users/{userId}/temperature/all` — full temperature config (3 phases: bedTime, initialSleep, finalSleep)
 - `GET /v1/users/{userId}/level-suggestions` — temperature level suggestions
 - `GET/PUT /v1/users/{userId}/level-suggestions-mode` — suggestion mode config
 - `GET /v1/audio/categories` — audio category list (Pod 5 Ultra only — requires built-in Base speakers)

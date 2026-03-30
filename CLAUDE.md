@@ -5,7 +5,7 @@
 - Async Python client library for the Eight Sleep Pod API
 - Uses httpx (async) for HTTP — caller injects `httpx.AsyncClient`
 - No Home Assistant or framework dependencies — pure Python
-- Comprehensive API reference at `docs/api_reference.md` (reverse-engineered from iOS app via MITM proxy, March 2026)
+- API reference index at `docs/api_reference.md`, with per-domain docs in `docs/api_reference/` (reverse-engineered from iOS app via MITM proxy, March 2026)
 - Architecture and roadmap at `docs/plan.md`
 
 ## Architecture
@@ -41,7 +41,8 @@ Short class names — `Session`, `Client`, `Token` (package provides namespace).
   - `api/` — tests for api/ classes
   - `models/` — tests for model classes
   - `repositories/` — tests for repositories
-- `docs/api_reference.md` — full API reference
+- `docs/api_reference.md` — API reference index (keyword-annotated TOC linking to domain files)
+- `docs/api_reference/` — per-domain API docs (alarms, temperature, bed_base, sleep_features, etc.)
 - `docs/plan.md` — architecture and roadmap
 
 ## API Base URLs
